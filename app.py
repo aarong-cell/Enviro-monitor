@@ -21,27 +21,23 @@ def run_monitor():
     global bids_cache, last_update
     
     try:
-        print(f"\n🔄 Running monitor at {datetime.now()}")
+        print(f"\n🔄 Running OHIO STATEWIDE monitor at {datetime.now()}")
         bot = BidMonitorBot()
         
-        # Run scrapers
-        bot.scrape_cleveland_city()
-        time.sleep(1)
-        bot.scrape_cuyahoga_county()
-        time.sleep(1)
-        bot.scrape_ohio_state()
-        time.sleep(1)
-        bot.add_sample_opportunities()
+        # Run ALL Ohio scrapers
+        opportunities = bot.run_all_scrapers()
         
         # Update cache
-        bids_cache = bot.opportunities
+        bids_cache = opportunities
         last_update = datetime.now().isoformat()
         
-        print(f"✅ Found {len(bids_cache)} opportunities")
+        print(f"✅ Found {len(bids_cache)} REAL opportunities across Ohio")
         return True
         
     except Exception as e:
         print(f"❌ Monitor error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def monitor_loop():
@@ -51,7 +47,7 @@ def monitor_loop():
     
     while True:
         run_monitor()
-        print("⏰ Next update in 6 hours...")
+        print("⏰ Next statewide scan in 6 hours...")
         time.sleep(6 * 3600)
 
 def start_monitoring():
@@ -59,7 +55,7 @@ def start_monitoring():
     global monitor_running
     
     if not monitor_running:
-        print("🚀 Starting bid monitor...")
+        print("🚀 Starting OHIO STATEWIDE bid monitor...")
         
         # Run immediately
         run_monitor()
@@ -68,7 +64,7 @@ def start_monitoring():
         thread = threading.Thread(target=monitor_loop, daemon=True)
         thread.start()
         
-        print("✅ Monitor started!")
+        print("✅ Statewide monitor started!")
 
 # Routes
 @app.route('/')
@@ -93,10 +89,11 @@ def health():
     
     return jsonify({
         'status': 'ok',
-        'message': 'Bid Monitor API is running',
+        'message': 'Ohio Statewide Bid Monitor is running',
         'bids_count': len(bids_cache),
         'last_update': last_update,
-        'monitor_active': monitor_running
+        'monitor_active': monitor_running,
+        'coverage': 'All of Ohio - State, Counties, Major Cities'
     })
 
 @app.route('/api/bids')
@@ -123,9 +120,16 @@ def get_stats():
         'state': len([b for b in bids_cache if b.get('type') == 'State']),
     }
     
+    # Count by source
+    sources = {}
+    for bid in bids_cache:
+        source = bid.get('source', 'Unknown')
+        sources[source] = sources.get(source, 0) + 1
+    
     return jsonify({
         'success': True,
         'statistics': stats,
+        'sources': sources,
         'last_update': last_update
     })
 
@@ -135,7 +139,7 @@ def refresh():
     
     return jsonify({
         'success': success,
-        'message': 'Refresh completed' if success else 'Refresh failed',
+        'message': 'Statewide refresh completed' if success else 'Refresh failed',
         'bids_count': len(bids_cache),
         'last_update': last_update
     })
