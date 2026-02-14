@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 from datetime import datetime
@@ -8,7 +8,7 @@ import time
 # Import the bot
 from bid_monitor_bot import BidMonitorBot
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
 # Global storage
@@ -72,128 +72,19 @@ def start_monitoring():
 
 # Routes
 @app.route('/')
-def home():
-    # Start monitoring on first request
+def index():
+    """Serve the dashboard"""
     if not monitor_running:
         start_monitoring()
-    
-    return f'''
-    <html>
-    <head>
-        <title>Cleveland Bid Monitor</title>
-        <meta charset="UTF-8">
-        <style>
-            body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                margin: 0;
-                padding: 0;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }}
-            .container {{
-                max-width: 800px;
-                padding: 40px;
-                background: rgba(255,255,255,0.1);
-                backdrop-filter: blur(10px);
-                border-radius: 20px;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            }}
-            h1 {{
-                margin: 0 0 20px 0;
-                font-size: 42px;
-            }}
-            .status {{
-                background: rgba(255,255,255,0.2);
-                padding: 20px;
-                border-radius: 10px;
-                margin: 20px 0;
-            }}
-            .status-item {{
-                display: flex;
-                justify-content: space-between;
-                padding: 10px 0;
-                border-bottom: 1px solid rgba(255,255,255,0.2);
-            }}
-            .status-item:last-child {{
-                border-bottom: none;
-            }}
-            .api-links {{
-                margin-top: 30px;
-            }}
-            .api-link {{
-                display: block;
-                padding: 15px 20px;
-                margin: 10px 0;
-                background: rgba(255,255,255,0.2);
-                border-radius: 10px;
-                text-decoration: none;
-                color: white;
-                transition: all 0.3s;
-            }}
-            .api-link:hover {{
-                background: rgba(255,255,255,0.3);
-                transform: translateX(10px);
-            }}
-            .badge {{
-                background: rgba(76, 175, 80, 0.3);
-                padding: 5px 15px;
-                border-radius: 20px;
-                font-size: 14px;
-                font-weight: bold;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>✅ Cleveland Bid Monitor</h1>
-            
-            <div class="status">
-                <div class="status-item">
-                    <span><strong>Status:</strong></span>
-                    <span class="badge">🟢 RUNNING</span>
-                </div>
-                <div class="status-item">
-                    <span><strong>Tracking:</strong></span>
-                    <span>Stormwater, Vac Trucks, Cleaning</span>
-                </div>
-                <div class="status-item">
-                    <span><strong>Opportunities Found:</strong></span>
-                    <span><strong>{len(bids_cache)}</strong> active bids</span>
-                </div>
-                <div class="status-item">
-                    <span><strong>Last Update:</strong></span>
-                    <span>{last_update or "Updating..."}</span>
-                </div>
-                <div class="status-item">
-                    <span><strong>Coverage:</strong></span>
-                    <span>Cleveland, Cuyahoga County, Ohio</span>
-                </div>
-            </div>
-            
-            <div class="api-links">
-                <h3>📡 API Endpoints:</h3>
-                <a href="/api/health" class="api-link">
-                    🏥 Health Check
-                </a>
-                <a href="/api/bids" class="api-link">
-                    📋 View All Bids ({len(bids_cache)} total)
-                </a>
-                <a href="/api/statistics" class="api-link">
-                    📊 Statistics & Breakdown
-                </a>
-            </div>
-            
-            <p style="margin-top: 30px; opacity: 0.8; text-align: center;">
-                🤖 Auto-refreshes every 6 hours
-            </p>
-        </div>
-    </body>
-    </html>
-    '''
+    return send_from_directory('static', 'index.html')
+
+@app.route('/css/<path:path>')
+def send_css(path):
+    return send_from_directory('static/css', path)
+
+@app.route('/js/<path:path>')
+def send_js(path):
+    return send_from_directory('static/js', path)
 
 @app.route('/api/health')
 def health():
